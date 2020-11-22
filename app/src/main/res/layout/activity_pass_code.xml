@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="#000000"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".PassCodeActivity">
+
+        <EditText
+            android:id="@+id/pass_code"
+            android:textColorHint="#C6C6C6"
+            android:background="@drawable/pass_background"
+            android:padding="26dp"
+            android:textColor="#FFFFFF"
+            android:hint="Enter Code..."
+            android:inputType="numberPassword"
+            android:textSize="22sp"
+            android:layout_margin="70dp"
+            android:layout_centerInParent="true"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:ignore="HardcodedText,TextViewEdits" />
+
+</RelativeLayout>
