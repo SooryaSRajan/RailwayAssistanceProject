@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="#000000"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    tools:context=".Registration.ReservationLogin">
+
+    <TextView
+        android:id="@+id/reg_main_text"
+        android:text="Registration"
+        android:fontFamily="sans-serif-condensed-medium"
+        android:layout_marginLeft="70dp"
+        android:textAlignment="center"
+        android:layout_marginRight="70dp"
+        android:textColor="#FFFFFF"
+        android:textSize="40sp"
+        android:layout_marginBottom="20dp"
+        android:layout_marginTop="60dp"
+        android:layout_centerHorizontal="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:layout_below="@+id/reg_main_text"
+        android:id="@+id/reg_hint_text"
+        android:text="Please sign into your account within the next sixty seconds to continue registration process, or say 'cancel' go back"
+        android:fontFamily="sans-serif-condensed-medium"
+        android:layout_marginLeft="70dp"
+        android:textAlignment="center"
+        android:layout_marginRight="70dp"
+        android:textColor="#FFFFFF"
+        android:textSize="23sp"
+        android:layout_centerHorizontal="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:inputType="textShortMessage"
+        android:textColorHint="#C5C5C5"
+        android:hint="Enter user name..."
+        android:textColor="#FFFFFF"
+        android:fontFamily="sans-serif-condensed-medium"
+        android:background="@drawable/pass_background"
+        android:padding="13dp"
+        android:id="@+id/reg_user_name"
+        android:layout_marginLeft="40dp"
+        android:layout_marginRight="40dp"
+        android:layout_marginTop="40dp"
+        android:layout_below="@+id/reg_hint_text"
+        android:imeOptions="actionNext"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"/>
+
+
+    <EditText
+        android:inputType="textWebPassword"
+        android:textColorHint="#C5C5C5"
+        android:hint="Enter Password..."
+        android:textColor="#FFFFFF"
+        android:fontFamily="sans-serif-condensed-medium"
+        android:background="@drawable/pass_background"
+        android:padding="13dp"
+        android:id="@+id/reg_password"
+        android:layout_marginLeft="40dp"
+        android:layout_marginRight="40dp"
+        android:layout_marginTop="40dp"
+        android:layout_below="@+id/reg_user_name"
+        android:imeOptions="actionNext"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/sign_in_button"
+        android:textSize="18sp"
+        android:textColor="#FFFFFF"
+        android:text="Sign In"
+        android:background="@drawable/pass_background"
+        android:layout_marginTop="50dp"
+        android:layout_marginRight="40dp"
+        android:layout_marginLeft="40dp"
+        android:layout_below="@+id/reg_password"
+        android:layout_width="match_parent"
+        android:imeOptions="actionDone"
+        android:layout_height="wrap_content"/>
+
+    <ProgressBar
+        android:id="@+id/sign_in_progress"
+        android:textSize="18sp"
+        android:textColor="#FFFFFF"
+        android:text="Sign In"
+        android:layout_marginTop="50dp"
+        android:layout_marginRight="40dp"
+        android:layout_marginLeft="40dp"
+        android:layout_below="@+id/reg_password"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/reg_timer"
+        android:textColor="#FFFFFF"
+        android:fontFamily="sans-serif-condensed-medium"
+        android:textAlignment="center"
+        android:layout_marginTop="60dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/sign_in_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+
+</RelativeLayout>

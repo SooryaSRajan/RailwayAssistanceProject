@@ -52,6 +52,10 @@ public class ConversationAdapter extends BaseAdapter {
             view = inflater.inflate(R.layout.right_chat, null);
         }
 
+        if(map.get("TYPE")!=null){
+            if(map.get("TYPE").toString().contains("IMAGE"));
+        }
+
         TextView convoText = view.findViewById(R.id.convo_text);
         convoText.setText(map.get("TEXT").toString());
 

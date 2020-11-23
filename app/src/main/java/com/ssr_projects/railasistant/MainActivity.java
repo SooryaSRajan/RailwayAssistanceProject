@@ -37,6 +37,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.ssr_projects.railasistant.Registration.QRCodeActivity;
+import com.ssr_projects.railasistant.Registration.ReservationLogin;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -44,6 +47,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Random;
 import java.util.Timer;
 
 import pl.droidsonroids.gif.GifImageView;
@@ -64,14 +68,13 @@ public class MainActivity extends AppCompatActivity {
     private String keyWord = null, intentKey;
     private Runnable runnable;
     private final int TIME = 1000;
-    private LocationManager mLocationManager;
     private ListView listView;
     private ArrayList<HashMap> mArrayList = new ArrayList<>();
     private ConversationAdapter adapter;
     private HashMap map;
     private TextView helloTextView;
     private GifImageView gifImageView, voiceGifView;
-    private int intCount = 0, twoMinuteCounter = 0, rollBackCounter = 0;
+    private int intCount = 0, twoMinuteCounter = 0;
     private DatabaseReference mRef = FirebaseDatabase.getInstance().getReference();
     private String commandsUsed = "List of commands that can be used are: " +
             "\n->Hello Assistant " +
@@ -87,6 +90,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
+        Log.e(TAG, "onCreate: Create" );
         helloTextView = findViewById(R.id.hello_text);
         gifImageView = findViewById(R.id.ai_gif);
         voiceGifView = findViewById(R.id.voice_recognizer_animation);
@@ -166,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
                         speechRecognizer.startListening(speechRecognizerIntent);
                         Log.e(TAG, "run: Start listening called");
                     }
+
                     Log.e(TAG, "run: " + setViewFlag );
                     if(intCount == 10 && !setViewFlag){
                         intCount = 0;
@@ -263,11 +269,34 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
                     isUserVoiceRecognized = false;
+
                     if(s.contains("details")){
                         Log.e(TAG, "onDone: " + s );
                         Intent i = new Intent(MainActivity.this, VoiceResultActivity.class);
                         i.putExtra("QUERY", "details");
                         startActivityForResult(i, 1000);
+                    }
+
+                    else if(s.contains("reg_qr_code")){
+                        Log.e(TAG, "onDone: " + s );
+                        Intent i = new Intent(MainActivity.this, QRCodeActivity.class);
+                        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(i);
+                        finish();
+                    }
+
+                    else if(s.contains("reservation_yes_no")){
+                        Log.e(TAG, "onDone: " + s );
+                        Intent i = new Intent(MainActivity.this, VoiceResultActivity.class);
+                        startActivityForResult(i, 8080);
+                    }
+
+                    else if(s.contains("reg_sign_in")){
+                        Log.e(TAG, "onDone: " + s );
+                        Intent i = new Intent(MainActivity.this, ReservationLogin.class);
+                        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(i);
+                        finish();
                     }
 
                     else if(s.contains("override_code_menu")){
@@ -349,6 +378,8 @@ public class MainActivity extends AppCompatActivity {
             public void onReadyForSpeech(Bundle bundle) {
                 isUserVoiceRecognized = true;
                 Log.e(TAG, "onReadyForSpeech: " );
+                ArrayList<String> data = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                Log.e(TAG, "onReadyForSpeech: " + data );
             }
 
             @Override
@@ -385,6 +416,7 @@ public class MainActivity extends AppCompatActivity {
                 voiceGifView.setVisibility(View.GONE);
                 isUserVoiceRecognized = false;
                 setViewFlag = false;
+                Log.e(TAG, "onError: " + i );
             }
 
             @Override
@@ -414,12 +446,17 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onPartialResults(Bundle bundle) {
-
+                ArrayList<String> data = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                String answer = data.get(0);
+                Log.e(TAG, "partial: " + answer );
             }
 
             @Override
             public void onEvent(int i, Bundle bundle) {
                 isUserVoiceRecognized = true;
+                ArrayList<String> data = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                String answer = data.get(0);
+                Log.e(TAG, "onEvent: " + answer );
             }
         });
 
@@ -438,6 +475,30 @@ public class MainActivity extends AppCompatActivity {
             mArrayList.add(map);
             adapter.notifyDataSetChanged();
 
+        }
+
+        else if(answer.contains("want to reserve a ticket")){
+
+            handler.removeCallbacks(runnable);
+            textToSpeech.speak("Okay, do you have an account? Yes or No", TextToSpeech.QUEUE_ADD, null, "reservation_yes_no");
+
+            map = new HashMap();
+            map.put("POSITION", "LEFT");
+            map.put("TEXT", "Okay, do you have an account? Yes or No");
+            mArrayList.add(map);
+            adapter.notifyDataSetChanged();
+
+        }
+
+        else if(answer.contains("show qr code")){
+            handler.removeCallbacks(runnable);
+            textToSpeech.speak("Sure, scan this QR code to register an account to reserve tickets", TextToSpeech.QUEUE_ADD, null, "reg_qr_code");
+
+            map = new HashMap();
+            map.put("POSITION", "LEFT");
+            map.put("TEXT", "Sure, scan this QR code to register an account to reserve tickets");
+            mArrayList.add(map);
+            adapter.notifyDataSetChanged();
         }
 
         else if(answer.contains("force override enable text")){
@@ -796,7 +857,7 @@ public class MainActivity extends AppCompatActivity {
             adapter.notifyDataSetChanged();
         }
 
-        else if(answer.contains("shut up")){
+        else if(answer.contains("shut up") || answer.contains("f*** off")){
             handler.removeCallbacks(runnable);
             textToSpeech.speak("okay", TextToSpeech.QUEUE_ADD, null, "time/date");
 
@@ -809,13 +870,49 @@ public class MainActivity extends AppCompatActivity {
 
         else {
             handler.removeCallbacks(runnable);
-            textToSpeech.speak("Sorry, I didn't get you, can you please repeat", TextToSpeech.QUEUE_ADD, null, "invalid");
             isUserVoiceRecognized = false;
-            map = new HashMap();
-            map.put("POSITION", "LEFT");
-            map.put("TEXT", "Sorry, I didn't get you, can you please repeat");
-            mArrayList.add(map);
-            adapter.notifyDataSetChanged();
+
+            Random random = new Random();
+            random.setSeed(System.currentTimeMillis());
+            int a = random.nextInt();
+
+            random = new Random();
+            random.setSeed(System.currentTimeMillis());
+            int b = random.nextInt();
+
+            a = b*a-b;
+
+            Log.e(TAG, "inputTextFunction: " + a );
+            if(a%2 == 0){
+                if(a>0){
+                    textToSpeech.speak("Sorry, What was that?", TextToSpeech.QUEUE_ADD, null, "invalid");
+                    map = new HashMap();
+                    map.put("POSITION", "LEFT");
+                    map.put("TEXT", "Sorry, What was that?");
+                    mArrayList.add(map);
+                    adapter.notifyDataSetChanged();
+                }
+
+                else{
+                    textToSpeech.speak("Sorry, Can you repeat it?", TextToSpeech.QUEUE_ADD, null, "invalid");
+                    map = new HashMap();
+                    map.put("POSITION", "LEFT");
+                    map.put("TEXT", "Sorry, Can you repeat it?");
+                    mArrayList.add(map);
+                    adapter.notifyDataSetChanged();
+                }
+
+            }
+
+            else if(a%3 == 0){
+                textToSpeech.speak("Sorry, I didn't get you, can you please repeat", TextToSpeech.QUEUE_ADD, null, "invalid");
+                map = new HashMap();
+                map.put("POSITION", "LEFT");
+                map.put("TEXT", "Sorry, I didn't get you, can you please repeat");
+                mArrayList.add(map);
+                adapter.notifyDataSetChanged();
+
+            }
         }
 
     }
@@ -915,6 +1012,62 @@ public class MainActivity extends AppCompatActivity {
 
         /**
          * */
+        else if(requestCode == 8080 && resultCode == Activity.RESULT_OK){
+
+            Log.e(TAG, "onActivityResult: " + commandBox.getVisibility() );
+            setForceOverrideFlag = false;
+            commandBox.setVisibility(View.GONE);
+            commandButton.setVisibility(View.GONE);
+            commandBox.setEnabled(false);
+            countDownTimer.start();
+
+            keyWord = data.getStringExtra("KEY").toLowerCase();
+
+            map = new HashMap();
+            map.put("POSITION", "RIGHT");
+            map.put("TEXT", keyWord);
+            mArrayList.add(map);
+            adapter.notifyDataSetChanged();
+
+            if(keyWord.contains("yes")){
+                map = new HashMap();
+                map.put("POSITION", "LEFT");
+                map.put("TEXT", "Okay, Sign into your account now");
+                mArrayList.add(map);
+                adapter.notifyDataSetChanged();
+
+                textToSpeech.speak("Okay, Sign into your account now", TextToSpeech.QUEUE_FLUSH, null,"reg_sign_in");
+            }
+
+            else if(keyWord.contains("no")){
+                map = new HashMap();
+                map.put("POSITION", "LEFT");
+                map.put("TEXT", "Okay, Scan this QR code to create an account");
+                mArrayList.add(map);
+                adapter.notifyDataSetChanged();
+
+                textToSpeech.speak("Okay, Scan this QR code to create an account", TextToSpeech.QUEUE_FLUSH, null,"reg_qr_code");
+            }
+
+            else {
+                map = new HashMap();
+                map.put("POSITION", "LEFT");
+                map.put("TEXT", "Sorry, that doesn't match your query");
+                mArrayList.add(map);
+                adapter.notifyDataSetChanged();
+
+                textToSpeech.speak("Sorry, that doesn't match your query", TextToSpeech.QUEUE_FLUSH, null,"hello");
+            }
+        }
+
+        else if(requestCode == 8080 && resultCode == Activity.RESULT_CANCELED){
+            textToSpeech.speak("Sorry, something happened, please try again later", TextToSpeech.QUEUE_FLUSH, null,"hello");
+            map = new HashMap();
+            map.put("POSITION", "LEFT");
+            map.put("TEXT", "Sorry, something happened, please try again later");
+            mArrayList.add(map);
+            adapter.notifyDataSetChanged();
+        }
 
         else if(requestCode == 5010 && resultCode == Activity.RESULT_OK){
             textToSpeech.speak("Force override was successful", TextToSpeech.QUEUE_FLUSH, null,"override_success");
@@ -1062,4 +1215,28 @@ public class MainActivity extends AppCompatActivity {
         return dateFormat.format(currentTime);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.e(TAG, "onDestroy: Destroyed"  );
+        speechRecognizer.cancel();
+        speechRecognizer.destroy();
+        countDownTimer.cancel();
+        handler.removeCallbacks(runnable);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        Log.e(TAG, "onPause: Paused");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.e(TAG, "onResume: Resume" );
+
+
+    }
 }
