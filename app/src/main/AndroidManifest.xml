@@ -10,7 +10,12 @@
         android:supportsRtl="true"
         android:testOnly="false"
         android:theme="@style/AppTheme">
-        <activity android:name=".Registration.ReservationActivity"></activity>
+        <activity android:name=".Registration.ReservationActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity android:name=".Registration.QRCodeActivity" />
         <activity android:name=".Registration.ReservationLogin" />
         <activity
@@ -19,11 +24,7 @@
         <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+                 </activity>
         <activity android:name=".PassCodeActivity"
             android:screenOrientation="portrait"/>
     </application>
