@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PersistableBundle;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -55,6 +56,8 @@ public class ReservationActivity extends AppCompatActivity {
     private final int TRAINS_TO_STATE_1 = 12;
     private final int ORDINARY_STATE = 1122;
     private final int EXPRESS_STATE = 1432;
+    private final int STATE_CONFIRM = 781;
+    private final int EXPRESS_SEAT_STATE = 8971;
     private final DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("TRAIN TABLE");
     private final String TAG = "Reservation Activity";
     private HashMap map;
@@ -68,6 +71,11 @@ public class ReservationActivity extends AppCompatActivity {
     private final String TYPE_EXPRESS = "EXPRESS";
     private String stationSelected;
     private int noOfSeats;
+    private String expressCategory, expressCategoryForFair;
+    private String travelDistance;
+    private int totalFare = 0;
+    private final String[] optionArray = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p",
+            "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -159,7 +167,6 @@ public class ReservationActivity extends AppCompatActivity {
 
             @Override
             public void onDone(String s) {
-                isSpeakingFlag = false;
 
                 if(s.contains("state_1")){
                     Handler handler = new Handler(Looper.getMainLooper());
@@ -167,6 +174,20 @@ public class ReservationActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             speechRecognizer.startListening(speechRecognizerIntent);
+                            isSpeakingFlag = false;
+                        }
+                    });
+                }
+
+
+                else if(s.contains("express_seat")){
+                    Handler handler = new Handler(Looper.getMainLooper());
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            state = EXPRESS_SEAT_STATE;
+                            speechRecognizer.startListening(speechRecognizerIntent);
+                            isSpeakingFlag = false;
                         }
                     });
                 }
@@ -177,6 +198,7 @@ public class ReservationActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             speechRecognizer.startListening(speechRecognizerIntent);
+                            isSpeakingFlag = false;
                         }
                     });
                 }
@@ -250,9 +272,6 @@ public class ReservationActivity extends AppCompatActivity {
                 if(v > 6){
                     gifImageView.setVisibility(View.VISIBLE);
                 }
-                else{
-                    gifImageView.setVisibility(View.GONE);
-                }
             }
 
             @Override
@@ -268,7 +287,7 @@ public class ReservationActivity extends AppCompatActivity {
             @Override
             public void onError(int i) {
                 gifImageView.setVisibility(View.GONE);
-                if(!isSpeakingFlag)
+                if(!isSpeakingFlag && !textToSpeech.isSpeaking())
                 speechRecognizer.startListening(speechRecognizerIntent);
                 Log.e(TAG, "onError: "  );
             }
@@ -307,6 +326,7 @@ public class ReservationActivity extends AppCompatActivity {
                 else{
                     switch(state){
                         case STATION_STATE_0:
+                            final int[] positionOfArrayOfOption = {0};
                             trainInformation.clear();
                             final Query query = databaseReference.child("STATIONS").orderByChild("STATION NAME").equalTo(answer.toUpperCase());
                             final String finalAnswer = answer;
@@ -314,30 +334,24 @@ public class ReservationActivity extends AppCompatActivity {
                                 @Override
                                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                                     int isAvailableflag = 0;
-                                    for(final DataSnapshot snap : snapshot.getChildren()){
+                                    for(final DataSnapshot snapMaster : snapshot.getChildren()){
                                         isAvailableflag++;
-                                        final String stationCode = snap.child("STATION CODE").getValue().toString();
-                                        informationToDisplay = "";
+                                        final String stationCode = snapMaster.child("STATION CODE").getValue().toString();
                                         databaseReference.child("ARRIVAL").addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
                                             public void onDataChange(@NonNull DataSnapshot snapshot) {
                                                 countDown = 60;
-                                                int count = 0;
                                                 stationSelected = finalAnswer.trim();
                                                 textToSpeech.speak("The following trains are available, which train do you want?", TextToSpeech.QUEUE_ADD, null, "train_available");
                                                 map = new HashMap();
                                                 map.put("POSITION", "LEFT");
-                                                map.put("TEXT", "The following trains are available, which train do you want? (state train number)" + informationToDisplay);
+                                                map.put("TEXT", "The following trains are available, which train do you want? (option)" + informationToDisplay);
                                                 mapArrayList.add(map);
                                                 adapter.notifyDataSetChanged();
 
                                                 for(final DataSnapshot snapSuper : snapshot.getChildren()){
                                                     if(snapSuper.child("STATION CODE").getValue().toString().contains(stationCode)) {
-                                                        count++;
                                                         Log.e(TAG, "onDataChange: " + snapSuper);
-                                                        informationToDisplay += count + ". \n";
-                                                        informationToDisplay += "Arrival time: ";
-                                                        informationToDisplay += snapSuper.child("ARRIVAL").getValue().toString();
                                                         databaseReference.child("TRAINS").addListenerForSingleValueEvent(new ValueEventListener() {
                                                             @Override
                                                             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -346,8 +360,13 @@ public class ReservationActivity extends AppCompatActivity {
                                                                         HashMap<String, DataSnapshot> trainMap = new HashMap();
                                                                         trainMap.put("ARRIVAL", snapSuper);
                                                                         trainMap.put("TRAIN", snap);
+                                                                        trainMap.put("STATION", snapMaster);
                                                                         trainInformation.add(trainMap);
                                                                         Log.e(TAG, "onDataChange: trainssssss" + snap );
+                                                                        informationToDisplay = optionArray[positionOfArrayOfOption[0]] + ". ";
+                                                                        positionOfArrayOfOption[0]++;
+                                                                        informationToDisplay += "Arrival time: ";
+                                                                        informationToDisplay += snapSuper.child("ARRIVAL").getValue().toString();
                                                                         informationToDisplay += "\nTrain Name: ";
                                                                         informationToDisplay += snap.child("TRAIN NAME").getValue().toString();
                                                                         informationToDisplay += "\nTrain Number: ";
@@ -398,16 +417,15 @@ public class ReservationActivity extends AppCompatActivity {
                             break;
 
                         case TRAINS_TO_STATE_1:
-                            answer = answer.replaceAll("\\s", "");
                             countDown = 60;
                             int check = 0;
-                            int position = -1;
-                                for(HashMap<String, DataSnapshot> trainListMap : trainInformation){
-                                    DataSnapshot snapshot = trainListMap.get("TRAIN");
-                                    DataSnapshot arrivalSnapshot = trainListMap.get("ARRIVAL");
-                                    position++;
-                                    if(snapshot.child("TRAIN NO").getValue().toString().equals(answer)){
-                                        optionPosition = position;
+                                for(int i = 0; i< optionArray.length; i++){
+                                    String checkOption = "option " + optionArray[i];
+                                    Log.e(TAG, "onResults: " + checkOption );
+                                    if(checkOption.contains(answer)){
+                                        DataSnapshot snapshot = trainInformation.get(i).get("TRAIN");
+                                        DataSnapshot arrivalSnapshot = trainInformation.get(i).get("ARRIVAL");
+                                        optionPosition = i;
                                         check++;
                                         String trainDetails = "TRAIN No: " + snapshot.child("TRAIN NO").getValue().toString();
                                         trainDetails += "\n" + "TRAIN NAME: " + snapshot.child("TRAIN NAME").getValue().toString();
@@ -444,6 +462,7 @@ public class ReservationActivity extends AppCompatActivity {
                                 databaseReference.child("TRAINS").child(snapshot.getKey()).child("A_SC").addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                        countDown = 60;
                                         int availableSeats = Integer.parseInt(snapshot.getValue().toString());
                                         if (availableSeats > noOfSeatsAnswer){
                                          noOfSeats = noOfSeatsAnswer;
@@ -453,6 +472,7 @@ public class ReservationActivity extends AppCompatActivity {
                                             map.put("TEXT", "Seats are available in this train");
                                             mapArrayList.add(map);
                                             adapter.notifyDataSetChanged();
+                                            getFareForDistanceAndCategory(trainInformation.get(optionPosition).get("STATION").child("DISTANCE FROM STATION").getValue().toString(), expressCategory, trainType);
                                         }
                                         else{
                                             textToSpeech.speak("Sorry, seats are not available in this train, cancelling process", TextToSpeech.QUEUE_ADD, null, "cancel_seat");
@@ -470,15 +490,139 @@ public class ReservationActivity extends AppCompatActivity {
                                     }
                                 });
                             }
-                            catch (Exception e){
-
+                            catch (NumberFormatException e){
+                                textToSpeech.speak("Invalid input, try again", TextToSpeech.QUEUE_ADD, null, "state_1");
+                                map = new HashMap();
+                                map.put("POSITION", "LEFT");
+                                map.put("TEXT", "Invalid input, try again");
+                                mapArrayList.add(map);
+                                adapter.notifyDataSetChanged();
                             }
                             break;
-                            case  EXPRESS_STATE:
 
+                            case  EXPRESS_STATE:
+                                int flag = 0;
+                                String keyWord = answer;
+                                if(keyWord.contains("1ac") || keyWord.contains("1 ac")){
+                                    expressCategory = "A_1AC";
+                                    expressCategoryForFair = "1AC";
+                                    flag++;
+                                }
+                                else if(keyWord.contains("2ac") || keyWord.contains("2 ac")){
+                                    expressCategory = "A_2AC";
+                                    expressCategoryForFair = "2AC";
+                                    flag++;
+                                }
+                                else if(keyWord.contains("3ac") || keyWord.contains("3 ac")){
+                                    expressCategory = "A_3AC";
+                                    expressCategoryForFair = "3AC";
+                                    flag++;
+                                }
+                                else if(keyWord.contains("cc")|| keyWord.contains("c c")){
+                                    expressCategory = "A_CC";
+                                    expressCategoryForFair = "CC";
+                                    flag++;
+                                }
+                                else if(keyWord.contains("fc") || keyWord.contains("f c")){
+                                    expressCategory = "A_FC";
+                                    expressCategoryForFair = "FC";
+                                    flag++;
+                                }
+                                else if(keyWord.contains("sc") || keyWord.contains("s c")){
+                                    expressCategory = "A_SC";
+                                    expressCategoryForFair = "SC";
+                                    flag++;
+                                }
+                                else if(keyWord.contains("st") || keyWord.contains("s t")){
+                                    expressCategory = "A_ST";
+                                    expressCategoryForFair = "ST";
+                                    flag++;
+                                }
+
+                                if(flag == 0){
+                                    textToSpeech.speak("Invalid category, try again or say cancel to exit", TextToSpeech.QUEUE_ADD, null, "state_1");
+                                    map = new HashMap();
+                                    map.put("POSITION", "LEFT");
+                                    map.put("TEXT", "Invalid category, try again or say cancel to exit");
+                                    mapArrayList.add(map);
+                                    adapter.notifyDataSetChanged();
+                                }
+
+                                else{
+                                    countDown = 60;
+                                    textToSpeech.speak("Express category selected, how many seats do you want?", TextToSpeech.QUEUE_ADD, null, "express_seat");
+                                    map = new HashMap();
+                                    map.put("POSITION", "LEFT");
+                                    map.put("TEXT", "Express category selected, how many seats do you want?");
+                                    mapArrayList.add(map);
+                                    adapter.notifyDataSetChanged();
+                                }
                             break;
 
+                        case EXPRESS_SEAT_STATE:
+                            try {
+                                final int noOfSeatsAnswer = Integer.parseInt(answer);
+                                DataSnapshot snapshot = trainInformation.get(optionPosition).get("TRAIN");
+                                databaseReference.child("TRAINS").child(snapshot.getKey()).child(expressCategory.trim()).addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                        int availableSeats = Integer.parseInt(snapshot.getValue().toString());
+                                        if (availableSeats > noOfSeatsAnswer) {
+                                            noOfSeats = noOfSeatsAnswer;
+                                            textToSpeech.speak("Seats are available in this train", TextToSpeech.QUEUE_ADD, null, "state_1");
+                                            map = new HashMap();
+                                            map.put("POSITION", "LEFT");
+                                            map.put("TEXT", "Seats are available in this train");
+                                            mapArrayList.add(map);
+                                            adapter.notifyDataSetChanged();
+                                            getFareForDistanceAndCategory(trainInformation.get(optionPosition).get("STATION").child("DISTANCE FROM STATION").getValue().toString(), expressCategoryForFair, trainType);
+                                        } else {
+                                            textToSpeech.speak("Sorry, seats are not available in this train, cancelling process", TextToSpeech.QUEUE_ADD, null, "cancel_seat");
+                                            map = new HashMap();
+                                            map.put("POSITION", "LEFT");
+                                            map.put("TEXT", "Sorry, seats are not available in this train");
+                                            mapArrayList.add(map);
+                                            adapter.notifyDataSetChanged();
+                                        }
+                                    }
 
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+
+                                    }
+                                });
+                            }
+                            catch (NumberFormatException e){
+                                textToSpeech.speak("Invalid input, try again", TextToSpeech.QUEUE_ADD, null, "state_1");
+                                map = new HashMap();
+                                map.put("POSITION", "LEFT");
+                                map.put("TEXT", "Invalid input, try again");
+                                mapArrayList.add(map);
+                                adapter.notifyDataSetChanged();
+                            }
+                            break;
+
+                        case STATE_CONFIRM:
+                            if(answer.contains("confirm")){
+                                textToSpeech.speak("Your reservation will be completed", TextToSpeech.QUEUE_ADD, null, "state_1");
+                                map = new HashMap();
+                                map.put("POSITION", "LEFT");
+                                map.put("TEXT", "Your reservation will be completed");
+                                mapArrayList.add(map);
+                                adapter.notifyDataSetChanged();
+                                ReservationData reservationData = new ReservationData(stationSelected,
+                                        trainInformation.get(optionPosition).get("TRAIN").child("TRAIN NO").getValue().toString(),
+                                        trainInformation.get(optionPosition).get("TRAIN").child("TRAIN NO").getValue().toString(),
+                                        trainType, expressCategoryForFair, noOfSeats, totalFare, travelDistance, trainInformation.get(optionPosition).get("ARRIVAL").child("ARRIVAL").getValue().toString());
+                                Log.e(TAG, "onResults: " + reservationData);
+                                Intent intent = new Intent(ReservationActivity.this, ReservationTicketActivity.class);
+                                intent.putExtra("CLASS", reservationData);
+                                speechRecognizer.cancel();
+                                speechRecognizer.destroy();
+                                startActivity(intent);
+                                finish();
+                            }
+                            break;
                     }
                 }
             }
@@ -493,6 +637,84 @@ public class ReservationActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("FLAG", isSpeakingFlag);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        isSpeakingFlag = savedInstanceState.getBoolean("FLAG");
+    }
+
+    private void getFareForDistanceAndCategory(final String travelDistance, String trainCategory, String trainType){
+        isSpeakingFlag = true;
+        state = STATE_CONFIRM;
+        countDown = 60;
+        Log.e(TAG, "getFareForDistanceAndCategory: " + travelDistance + " " + trainCategory + " " + trainType );
+        Log.e(TAG, "getFareForDistanceAndCategory: " + trainInformation.get(optionPosition).get("STATION") );
+
+        if(Integer.parseInt(travelDistance) == 0){
+            isSpeakingFlag = true;
+            speechRecognizer.stopListening();
+            textToSpeech.speak("Sorry, you cannot book a ticket to the same station, cancelling process", TextToSpeech.QUEUE_FLUSH, null, "cancel_seat");
+            map = new HashMap();
+            map.put("POSITION", "LEFT");
+            map.put("TEXT", "Sorry, you cannot book a ticket to the same station, cancelling process");
+            mapArrayList.add(map);
+            adapter.notifyDataSetChanged();
+        }
+
+        else{
+            String fairCategory = null;
+            if(trainType.contains(TYPE_ORDINARY)){
+                fairCategory = "ORD_SC";
+                expressCategoryForFair = "ORDINARY SC";
+            }
+
+            else if(trainType.contains(TYPE_EXPRESS)){
+                fairCategory = "ME_" + trainCategory;
+                expressCategoryForFair = "EXPRESS " + trainCategory;
+            }
+
+            Query query = databaseReference.child("FARE").orderByChild("DISTANCE").equalTo(travelDistance);
+            final String finalFairCategory = fairCategory;
+            if(fairCategory != null)
+                query.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        for(DataSnapshot snap : snapshot.getChildren()){
+                            isSpeakingFlag = true;
+                            speechRecognizer.stopListening();
+                            Log.e(TAG, "onDataChange: " + snap.child(finalFairCategory).getValue().toString());
+                            int fare = Integer.parseInt(snap.child(finalFairCategory).getValue().toString());
+                            totalFare = fare * noOfSeats;
+                            Log.e(TAG, "onDataChange: " + totalFare);
+                            isSpeakingFlag = true;
+                            speechRecognizer.stopListening();
+                            textToSpeech.speak("Your total charges will be: " + totalFare + " Rs \n Say confirm to complete transaction", TextToSpeech.QUEUE_FLUSH, null, "state_1");
+                            isSpeakingFlag = true;
+                            speechRecognizer.stopListening();
+                            map = new HashMap();
+                            map.put("POSITION", "LEFT");
+                            map.put("TEXT", "Your total charges will be: " + totalFare + " Rs \n Say confirm to complete transaction");
+                            mapArrayList.add(map);
+                            adapter.notifyDataSetChanged();
+
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+
+                    }
+                });
+        }
 
     }
+
 }

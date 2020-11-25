@@ -1,36 +1,47 @@
 package com.ssr_projects.railasistant.Registration;
 
-public class ReservationData {
+import java.io.Serializable;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+
+public class ReservationData implements Serializable {
 
     private String stationName;
     private String trainNumber;
     private String trainName;
+    private String trainType;
     private String trainSeatType;
     private int noOfSeats;
     private int costOfBooking;
+    private String distanceOfTrain;
+    private String trainTime;
+    private String reservationTime;
 
-    public void setStationName(String stationName) {
+    public ReservationData(String stationName, String trainNumber, String trainName, String trainType, String trainSeatType, int noOfSeats, int costOfBooking, String distanceOfTrain, String trainTime) {
         this.stationName = stationName;
-    }
-
-    public void setTrainNumber(String trainNumber) {
         this.trainNumber = trainNumber;
-    }
-
-    public void setTrainName(String trainName) {
         this.trainName = trainName;
-    }
-
-    public void setTrainSeatType(String trainSeatType) {
+        this.trainType = trainType;
         this.trainSeatType = trainSeatType;
-    }
-
-    public void setNoOfSeats(int noOfSeats) {
         this.noOfSeats = noOfSeats;
+        this.costOfBooking = costOfBooking;
+        this.distanceOfTrain = distanceOfTrain;
+        this.trainTime = trainTime;
+        reservationTime = getTime();
     }
 
-    public void setCostOfBooking(int costOfBooking) {
-        this.costOfBooking = costOfBooking;
+    public String getTrainTime() {
+        return trainTime;
+    }
+
+    public String getReservationTime() {
+        return reservationTime;
+    }
+
+    public String getDistanceOfTrain() {
+        return distanceOfTrain;
     }
 
     public String getStationName() {
@@ -45,6 +56,10 @@ public class ReservationData {
         return trainName;
     }
 
+    public String getTrainType() {
+        return trainType;
+    }
+
     public String getTrainSeatType() {
         return trainSeatType;
     }
@@ -56,4 +71,11 @@ public class ReservationData {
     public int getCostOfBooking() {
         return costOfBooking;
     }
+
+    public String getTime() {
+        Date currentTime = Calendar.getInstance().getTime();
+        DateFormat timeFormat = new SimpleDateFormat("MM-dd-yyyy HH:mm");
+        return timeFormat.format(currentTime);
+    }
+
 }
