@@ -76,6 +76,7 @@ public class ReservationActivity extends AppCompatActivity {
     private int totalFare = 0;
     private final String[] optionArray = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p",
             "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
+    private int countOfTrain = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -205,13 +206,13 @@ public class ReservationActivity extends AppCompatActivity {
 
                 else if(s.contains("cancel_seat")){
                     Log.e(TAG, "onDone: cancel" );
-                    handler.removeCallbacks(runnable);
                     Handler mHandler = new Handler(Looper.getMainLooper());
                     mHandler.post(new Runnable() {
                         @Override
                         public void run() {
                             speechRecognizer.cancel();
                             speechRecognizer.destroy();
+                            handler.removeCallbacks(runnable);
                             FirebaseAuth.getInstance().signOut();
                             Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                             startActivity(intent);
@@ -350,7 +351,7 @@ public class ReservationActivity extends AppCompatActivity {
                                                 adapter.notifyDataSetChanged();
 
                                                 for(final DataSnapshot snapSuper : snapshot.getChildren()){
-                                                    if(snapSuper.child("STATION CODE").getValue().toString().contains(stationCode)) {
+                                                    if(snapSuper.child("STATION CODE").getValue().toString().contains(stationCode) && snapSuper.child("TYPE").getValue().toString().contains("TO")) {
                                                         Log.e(TAG, "onDataChange: " + snapSuper);
                                                         databaseReference.child("TRAINS").addListenerForSingleValueEvent(new ValueEventListener() {
                                                             @Override
@@ -466,12 +467,6 @@ public class ReservationActivity extends AppCompatActivity {
                                         int availableSeats = Integer.parseInt(snapshot.getValue().toString());
                                         if (availableSeats > noOfSeatsAnswer){
                                          noOfSeats = noOfSeatsAnswer;
-                                            textToSpeech.speak("Seats are available in this train", TextToSpeech.QUEUE_ADD, null, "state_1");
-                                            map = new HashMap();
-                                            map.put("POSITION", "LEFT");
-                                            map.put("TEXT", "Seats are available in this train");
-                                            mapArrayList.add(map);
-                                            adapter.notifyDataSetChanged();
                                             getFareForDistanceAndCategory(trainInformation.get(optionPosition).get("STATION").child("DISTANCE FROM STATION").getValue().toString(), expressCategory, trainType);
                                         }
                                         else{
@@ -569,11 +564,6 @@ public class ReservationActivity extends AppCompatActivity {
                                         int availableSeats = Integer.parseInt(snapshot.getValue().toString());
                                         if (availableSeats > noOfSeatsAnswer) {
                                             noOfSeats = noOfSeatsAnswer;
-                                            textToSpeech.speak("Seats are available in this train", TextToSpeech.QUEUE_ADD, null, "state_1");
-                                            map = new HashMap();
-                                            map.put("POSITION", "LEFT");
-                                            map.put("TEXT", "Seats are available in this train");
-                                            mapArrayList.add(map);
                                             adapter.notifyDataSetChanged();
                                             getFareForDistanceAndCategory(trainInformation.get(optionPosition).get("STATION").child("DISTANCE FROM STATION").getValue().toString(), expressCategoryForFair, trainType);
                                         } else {
@@ -612,11 +602,15 @@ public class ReservationActivity extends AppCompatActivity {
                                 adapter.notifyDataSetChanged();
                                 ReservationData reservationData = new ReservationData(stationSelected,
                                         trainInformation.get(optionPosition).get("TRAIN").child("TRAIN NO").getValue().toString(),
-                                        trainInformation.get(optionPosition).get("TRAIN").child("TRAIN NO").getValue().toString(),
-                                        trainType, expressCategoryForFair, noOfSeats, totalFare, travelDistance, trainInformation.get(optionPosition).get("ARRIVAL").child("ARRIVAL").getValue().toString());
+                                        trainInformation.get(optionPosition).get("TRAIN").child("TRAIN NAME").getValue().toString(),
+                                        trainType, expressCategoryForFair, noOfSeats, totalFare, travelDistance,
+                                        trainInformation.get(optionPosition).get("ARRIVAL").child("ARRIVAL").getValue().toString(),
+                                        trainInformation.get(optionPosition).get("TRAIN").getKey());
+
                                 Log.e(TAG, "onResults: " + reservationData);
                                 Intent intent = new Intent(ReservationActivity.this, ReservationTicketActivity.class);
                                 intent.putExtra("CLASS", reservationData);
+                                handler.removeCallbacks(runnable);
                                 speechRecognizer.cancel();
                                 speechRecognizer.destroy();
                                 startActivity(intent);
@@ -696,12 +690,12 @@ public class ReservationActivity extends AppCompatActivity {
                             Log.e(TAG, "onDataChange: " + totalFare);
                             isSpeakingFlag = true;
                             speechRecognizer.stopListening();
-                            textToSpeech.speak("Your total charges will be: " + totalFare + " Rs \n Say confirm to complete transaction", TextToSpeech.QUEUE_FLUSH, null, "state_1");
+                            textToSpeech.speak("Seats are available in this train \nYour total charges will be: " + totalFare + " Rs \n Say confirm to complete transaction", TextToSpeech.QUEUE_FLUSH, null, "state_1");
                             isSpeakingFlag = true;
                             speechRecognizer.stopListening();
                             map = new HashMap();
                             map.put("POSITION", "LEFT");
-                            map.put("TEXT", "Your total charges will be: " + totalFare + " Rs \n Say confirm to complete transaction");
+                            map.put("TEXT", "Seats are available in this train \nYour total charges will be: " + totalFare + " Rs \n Say confirm to complete transaction");
                             mapArrayList.add(map);
                             adapter.notifyDataSetChanged();
 

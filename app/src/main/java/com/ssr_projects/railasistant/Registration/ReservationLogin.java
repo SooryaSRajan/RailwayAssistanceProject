@@ -210,9 +210,14 @@ public class ReservationLogin extends AppCompatActivity {
                         @Override
                         public void onFailure(@NonNull Exception e) {
                             Log.e("Login", "onFailure: " + e.toString() );
+                            view.setVisibility(View.VISIBLE);
                             if(e.toString().contains("There is no user record corresponding to this identifier")){
                                 speechRecognizer.stopListening();
                                 textToSpeech.speak("Sorry, this account was not found, please try again", TextToSpeech.QUEUE_ADD, null, "not_found");
+                            }
+                            else if(e.toString().contains("The password is invalid or the user does not have a password")){
+                                speechRecognizer.stopListening();
+                                textToSpeech.speak("Sorry, that password was incorrect", TextToSpeech.QUEUE_ADD, null, "not_found");
                             }
                         }
                     });

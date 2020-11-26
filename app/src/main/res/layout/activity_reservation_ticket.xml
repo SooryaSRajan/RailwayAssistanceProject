@@ -1,9 +1,348 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/colorBlack"
     tools:context=".Registration.ReservationTicketActivity">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <LinearLayout
+        android:id="@+id/linear_layout"
+        android:orientation="horizontal"
+        android:weightSum="4"
+        android:layout_alignParentTop="true"
+        android:layout_above="@+id/safe_journey"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_weight="0.5"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:textSize="25sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="#0084DC"
+                android:text="Train name: \n"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="#9E9E9E"
+                android:text="Name:"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="#9E9E9E"
+                android:text="Card:"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="#9E9E9E"
+                android:text="To Station:"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="#9E9E9E"
+                android:text="Train number:"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="#9E9E9E"
+                android:text="Train category:"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+
+            <TextView
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="#9E9E9E"
+                android:text="Train seat type:"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="#9E9E9E"
+                android:text="No of Seats:"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="#9E9E9E"
+                android:text="Arrival Time:"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="#9E9E9E"
+                android:text="Departure Time:"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="#9E9E9E"
+                android:text="Reservation Time:"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_weight="3.5"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:id="@+id/train_name"
+                android:textColor="#0084DC"
+                android:textSize="25sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:maxLines="1"
+                android:id="@+id/user_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="20dp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="@color/colorWhite"
+                android:textSize="20sp"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:maxLines="1"
+                android:id="@+id/card_number"
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="@color/colorWhite"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+
+            <TextView
+                android:maxLines="1"
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="@color/colorWhite"
+                android:id="@+id/to_station"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:maxLines="1"
+                android:id="@+id/train_no"
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="@color/colorWhite"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:maxLines="1"
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="@color/colorWhite"
+                android:id="@+id/train_category"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:maxLines="1"
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="@color/colorWhite"
+                android:id="@+id/train_seat_type"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:maxLines="1"
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="@color/colorWhite"
+                android:id="@+id/train_no_of_seats"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:maxLines="1"
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="@color/colorWhite"
+                android:id="@+id/arrival_time"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+
+            <TextView
+                android:maxLines="1"
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="@color/colorWhite"
+                android:id="@+id/departure_time"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:maxLines="1"
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-condensed-medium"
+                android:textColor="@color/colorWhite"
+                android:id="@+id/reservation_time"
+                android:layout_marginTop="20dp"
+                android:layout_marginStart="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="HardcodedText" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <TextView
+        android:visibility="gone"
+        android:textAlignment="center"
+        android:text="Safe Journey!"
+        android:textSize="28sp"
+        android:fontFamily="sans-serif-condensed-light"
+        android:layout_margin="10dp"
+        android:textColor="#0084DC"
+        android:id="@+id/safe_journey"
+        android:layout_above="@+id/ticket_cost"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <RelativeLayout
+        android:layout_marginBottom="30dp"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/ticket_cost"
+        android:layout_above="@+id/trancaction_id"
+        android:layout_width="wrap_content"
+        android:layout_height="100dp">
+
+        <TextView
+            android:fontFamily="sans-serif-condensed-medium"
+            android:textColor="@color/colorAccent"
+            android:id="@+id/total_amount"
+            android:textSize="90sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:fontFamily="sans-serif-condensed-medium"
+            android:textColor="@color/colorWhite"
+            android:layout_alignParentBottom="true"
+            android:text="Rs"
+            android:layout_toEndOf="@+id/total_amount"
+            android:textSize="40sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="HardcodedText" />
+
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/trancaction_id"
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:text="Transaction ID: "
+        android:textSize="18sp"
+        android:fontFamily="sans-serif-condensed-medium"
+        android:textColor="#9E9E9E"
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+
+</RelativeLayout>

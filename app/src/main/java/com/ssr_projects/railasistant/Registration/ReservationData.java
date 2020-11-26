@@ -18,8 +18,9 @@ public class ReservationData implements Serializable {
     private String distanceOfTrain;
     private String trainTime;
     private String reservationTime;
+    private String trainKey;
 
-    public ReservationData(String stationName, String trainNumber, String trainName, String trainType, String trainSeatType, int noOfSeats, int costOfBooking, String distanceOfTrain, String trainTime) {
+    public ReservationData(String stationName, String trainNumber, String trainName, String trainType, String trainSeatType, int noOfSeats, int costOfBooking, String distanceOfTrain, String trainTime, String trainKey) {
         this.stationName = stationName;
         this.trainNumber = trainNumber;
         this.trainName = trainName;
@@ -29,7 +30,12 @@ public class ReservationData implements Serializable {
         this.costOfBooking = costOfBooking;
         this.distanceOfTrain = distanceOfTrain;
         this.trainTime = trainTime;
+        this.trainKey = trainKey;
         reservationTime = getTime();
+    }
+
+    public String getTrainKey() {
+        return trainKey;
     }
 
     public String getTrainTime() {
