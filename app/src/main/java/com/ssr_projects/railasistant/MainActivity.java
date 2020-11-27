@@ -6,12 +6,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
@@ -25,7 +25,6 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -36,10 +35,10 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.ssr_projects.railasistant.Registration.QRCodeActivity;
 import com.ssr_projects.railasistant.Registration.ReservationLogin;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -47,9 +46,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Random;
-import java.util.Timer;
-
 import pl.droidsonroids.gif.GifImageView;
 
 public class MainActivity extends AppCompatActivity {
@@ -77,14 +75,28 @@ public class MainActivity extends AppCompatActivity {
     private int intCount = 0, twoMinuteCounter = 0;
     private DatabaseReference mRef = FirebaseDatabase.getInstance().getReference();
     private String commandsUsed = "List of commands that can be used are: " +
-            "\n->Hello Assistant " +
+            "\n->Hello Assistant" +
+            "\n->Who are you" +
             "\n->How many seats are available in *train name* " +
-            "\n->Are there trains to *city* " +
-            "\n->When will train *train number* arrive at *station code*" +
+            "\n->Are there trains to *station name* (from palakkad)" +
+            "\n->When will train *train name* arrive at *station name*" +
+            "\n->When will train *train name* start from *station name*" +
+            "\n->When will the next train reach *station Name*" +
+            "\n->When will the next train arrive here" +
+            "\n->When will *train name* reach here" +
+            "\n->Which train will arrive at platform *platform no*" +
+            "\n->Which platform will *train name* arrive at " +
+            "\n->Show run schedule" +
+            "\n->Which is the train number of *train name*" +
+            "\n->Which is the train name of *train number*" +
+            "\n->I want to reserve a ticket" +
+            "\n->Show QR code" +
             "\n->What is the Time" +
             "\n->What is the Date";
     private Handler mHandler = new Handler(Looper.getMainLooper());
-
+    private final int TIME_GREATER = -1;
+    private final int TIME_LESSER = 1;
+    private final int TIME_EQUAL = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -173,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     Log.e(TAG, "run: " + setViewFlag );
-                    if(intCount == 10 && !setViewFlag){
+                    if(intCount == 20 && !setViewFlag){
                         intCount = 0;
                         twoMinuteCounter = 0;
                         mArrayList.clear();
@@ -181,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
                         helloTextView.setVisibility(View.VISIBLE);
                         gifImageView.setVisibility(View.VISIBLE);
                     }
-                    else if(intCount == 10){
+                    else if(intCount == 20){
                         intCount = 0;
                     }
                     Log.e(TAG, "run: " + twoMinuteCounter );
@@ -464,10 +476,10 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void inputTextFunction(String answer){
+    private void inputTextFunction(final String answer){
         commandButton.setEnabled(false);
-        if(answer.contains("hello assistant")){
 
+        if(answer.contains("hello assistant")){
             handler.removeCallbacks(runnable);
             textToSpeech.speak("Hello, what do you want?", TextToSpeech.QUEUE_ADD, null, "hello");
 
@@ -476,8 +488,201 @@ public class MainActivity extends AppCompatActivity {
             map.put("TEXT", "Hello, what do you want?");
             mArrayList.add(map);
             adapter.notifyDataSetChanged();
+        }
+/**
+ * when will the next train reach here
+ */
+        else if(answer.contains("when will") && answer.contains("next train") && (answer.contains("arrive here") || answer.contains("reach here")) ){
+            handler.removeCallbacks(runnable);
+            final String[] trainTime = {""};
+            mRef.child("TRAIN TABLE").child("ARRIVAL").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    for (DataSnapshot snap : snapshot.getChildren()) {
+                        if (snap.child("STATION CODE").getValue().toString().contains("PGT")) {
+                            String time = snap.child("ARRIVAL").getValue().toString();
+                            String trainNo = snap.child("TRAIN NO").getValue().toString();
+                            try {
+                                if (compareToSystemTime(time) == TIME_GREATER || compareToSystemTime(time) == TIME_EQUAL) {
+                                    trainTime[0] += "\nTrain No: " + trainNo + " Time: " +time;
+                                }
+
+                            } catch (Exception e) {
+                                Log.e(TAG, "Time Exception: " + e.toString());
+                            }
+                        }
+                    }
+                    if (trainTime[0] != "") {
+                        textToSpeech.speak("The following timings were found", TextToSpeech.QUEUE_ADD, null, "hello");
+                        map = new HashMap();
+                        map.put("POSITION", "LEFT");
+                        map.put("TEXT", "The following timings were found" + "\n" + trainTime[0]);
+                        mArrayList.add(map);
+                        adapter.notifyDataSetChanged();
+                    }
+                    else{
+                        textToSpeech.speak("Sorry, no trains are available today, after this time", TextToSpeech.QUEUE_ADD, null, "hello");
+                        map = new HashMap();
+                        map.put("POSITION", "LEFT");
+                        map.put("TEXT", "Sorry, no trains are available today, after this time");
+                        mArrayList.add(map);
+                        adapter.notifyDataSetChanged();
+                    }
+                }
+
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        }
+
+        /**
+         * When will the next train reach *station*
+         */
+
+        else if(answer.contains("when will") && answer.contains("next train") && answer.contains("reach")){
+            handler.removeCallbacks(runnable);
+            final String[] trainTime = {""};
+            final String[] stationName = new String[1];
+            final int[] count = {0};
+            mRef.child("TRAIN TABLE").child("STATIONS").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    for(final DataSnapshot snap : snapshot.getChildren()){
+                        Log.e(TAG, "onDataChange: Next train checking in for given train");
+                    if(answer.contains(snap.child("STATION NAME").getValue().toString().toLowerCase())){
+                        count[0]++;
+                        stationName[0] = snap.child("STATION NAME").getValue().toString().toLowerCase();
+                        final String stationCode = snap.child("STATION CODE").getValue().toString();
+                        mRef.child("TRAIN TABLE").child("ARRIVAL").addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                for(DataSnapshot snap : snapshot.getChildren()){
+                                    if(snap.child("STATION CODE").getValue().toString().contains(stationCode)
+                                        && snap.child("TYPE").getValue().toString().contains("TO")){
+                                        String time = snap.child("ARRIVAL").getValue().toString();
+                                        try {
+                                            if (compareToSystemTime(time) == TIME_GREATER || compareToSystemTime(time) == TIME_EQUAL) {
+                                                trainTime[0] += "\n" + time;
+                                            }
+
+                                        } catch (Exception e) {
+                                            Log.e(TAG, "Chat Adapter Time Exception: " + e.toString());
+                                        }
+                                    }
+                                }
+                                if (trainTime[0] != "") {
+                                    textToSpeech.speak("The following timings were found for station " + stationName[0], TextToSpeech.QUEUE_ADD, null, "hello");
+                                    map = new HashMap();
+                                    map.put("POSITION", "LEFT");
+                                    map.put("TEXT", "The following timings were found for station " + stationName[0] + "\n" + trainTime[0]);
+                                    mArrayList.add(map);
+                                    adapter.notifyDataSetChanged();
+                                }
+                                else{
+                                    textToSpeech.speak("Sorry, no trains are available today, after this time", TextToSpeech.QUEUE_ADD, null, "hello");
+                                    map = new HashMap();
+                                    map.put("POSITION", "LEFT");
+                                    map.put("TEXT", "Sorry, no trains are available today, after this time");
+                                    mArrayList.add(map);
+                                    adapter.notifyDataSetChanged();
+                                }
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError error) {
+
+                            }
+                        });
+                    }
+                    }
+                    if(count[0] == 0){
+                        textToSpeech.speak("Sorry, no trains were found", TextToSpeech.QUEUE_ADD, null, "hello");
+                        map = new HashMap();
+                        map.put("POSITION", "LEFT");
+                        map.put("TEXT", "Sorry, no trains were found");
+                        mArrayList.add(map);
+                        adapter.notifyDataSetChanged();
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
 
         }
+
+        /**
+         * when will *train* reach here
+         * Doesnt depend on system time
+         */
+
+        else if(answer.contains("when will") && answer.contains("reach")){
+            handler.removeCallbacks(runnable);
+            mRef.child("TRAIN TABLE").child("TRAINS").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    int count = 0;
+                    String trainInformation = "";
+                    for(DataSnapshot snap : snapshot.getChildren()){
+                        if(answer.contains(snap.child("TRAIN NAME").getValue().toString().toLowerCase())){
+                             count++;
+                             trainInformation += "Train Name: " + snap.child("TRAIN NAME").getValue().toString() + "\n";
+                             final String trainKey = snap.child("TRAIN NO").getValue().toString();
+                             trainInformation += "Train Number: " + trainKey + "\n";
+                            final String finalTrainInformation = trainInformation;
+                            mRef.child("TRAIN TABLE").child("ARRIVAL").addListenerForSingleValueEvent(new ValueEventListener() {
+                              @Override
+                              public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                  String trainTime = "";
+                                  for(DataSnapshot snap : snapshot.getChildren()) {
+                                    if(snap.child("TRAIN NO").getValue().toString().contains(trainKey) && snap.child("STATION CODE").getValue().toString().contains("PGT")){
+                                        trainTime += snap.child("ARRIVAL").getValue().toString() + "\n";
+                                    }
+                                  }
+                                  if(trainTime != ""){
+                                      textToSpeech.speak("The following timings were found for the train", TextToSpeech.QUEUE_ADD, null, "hello");
+                                      map = new HashMap();
+                                      map.put("POSITION", "LEFT");
+                                      map.put("TEXT", "The following timings were found for the train" + "\n" + finalTrainInformation + "\n" + trainTime);
+                                  }
+                                  else{
+                                      textToSpeech.speak("Sorry, no timings were found", TextToSpeech.QUEUE_ADD, null, "hello");
+                                      map = new HashMap();
+                                      map.put("POSITION", "LEFT");
+                                      map.put("TEXT", "Sorry, no timings were found");
+                                  }
+                                  mArrayList.add(map);
+                                  adapter.notifyDataSetChanged();
+                              }
+
+                              @Override
+                              public void onCancelled(@NonNull DatabaseError error) {
+
+                              }
+                          });
+                        }
+                    }
+                    if(count == 0){
+                        textToSpeech.speak("Sorry, invalid train name", TextToSpeech.QUEUE_ADD, null, "hello");
+                        map = new HashMap();
+                        map.put("POSITION", "LEFT");
+                        map.put("TEXT", "Sorry, invalid train name");
+                        mArrayList.add(map);
+                        adapter.notifyDataSetChanged();
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+            }
 
         else if(answer.contains("want to reserve a ticket")){
 
@@ -637,12 +842,24 @@ public class MainActivity extends AppCompatActivity {
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     int flag = 0;
                     for(DataSnapshot snap : snapshot.getChildren()){
-                        if(finalAnswer2.contains(snap.child("TRAIN NAME").getValue().toString().toLowerCase())){
+                        if(snap.child("TYPE").getValue().toString().contains("EXPRESS") && finalAnswer2.contains(snap.child("TRAIN NAME").getValue().toString().toLowerCase())){
                             textToSpeech.speak("What category", TextToSpeech.QUEUE_ADD, null, "train category");
                             intentKey = snap.getKey();
                             map = new HashMap();
                             map.put("POSITION", "LEFT");
                             map.put("TEXT", "What category? 3AC, 2AC, 1AC, CC, FC, SC, ST");
+                            mArrayList.add(map);
+                            flag++;
+                            adapter.notifyDataSetChanged();
+                        }
+                        else if(snap.child("TYPE").getValue().toString().contains("ORDINARY") &&
+                                finalAnswer2.contains(snap.child("TRAIN NAME").getValue().toString().toLowerCase())){
+                            String noOfSeats = snap.child("A_SC").getValue().toString();
+                            textToSpeech.speak("This is an ordinary train, SC class has " + noOfSeats + " seats", TextToSpeech.QUEUE_ADD, null, "hello");
+                            intentKey = snap.getKey();
+                            map = new HashMap();
+                            map.put("POSITION", "LEFT");
+                            map.put("TEXT", "This is an ordinary train, SC class has " + noOfSeats + " seats");
                             mArrayList.add(map);
                             flag++;
                             adapter.notifyDataSetChanged();
@@ -656,6 +873,249 @@ public class MainActivity extends AppCompatActivity {
                         mArrayList.add(map);
                         adapter.notifyDataSetChanged();
                     }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        }
+        else if(answer.contains("show") && (answer.contains("run schedule") || answer.contains("runs schedule"))){
+            handler.removeCallbacks(runnable);
+            Query query = mRef.child("TRAIN TABLE").child("PLATFORM").orderByChild("PLATFORM NO");
+            query.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    String readableString = "\n";
+                    int i = 0;
+                    for(DataSnapshot snap : snapshot.getChildren()){
+                        i++;
+                        readableString += i + ".\n" + snap.getValue();
+                    }
+                    readableString = readableString.replace("{", " ");
+                    readableString = readableString.replace("}", "\n\n");
+                    readableString = readableString.replace("=", " : ");
+                    readableString = readableString.replace(",", "\n");
+
+                    textToSpeech.speak("Run schedule for the platforms are given below", TextToSpeech.QUEUE_ADD, null, "hello");
+                    map = new HashMap();
+                    map.put("POSITION", "LEFT");
+                    map.put("TEXT", "Run schedule for the platforms are given below\n" + readableString);
+                    mArrayList.add(map);
+                    adapter.notifyDataSetChanged();
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        }
+
+        else if(answer.contains("what is") && answer.contains("train number") && answer.contains("of")){
+            handler.removeCallbacks(runnable);
+            mRef.child("TRAIN TABLE").child("TRAINS").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    int flag = 0;
+                    for(DataSnapshot snap: snapshot.getChildren()){
+                        if(answer.contains(Objects.requireNonNull(snap.child("TRAIN NAME").getValue()).toString().toLowerCase())){
+                            flag++;
+                            textToSpeech.speak("The train number of " + snap.child("TRAIN NAME").getValue().toString() + " is " + snap.child("TRAIN NO").getValue().toString(), TextToSpeech.QUEUE_ADD, null, "hello");
+                            map = new HashMap();
+                            map.put("POSITION", "LEFT");
+                            map.put("TEXT", "The train number of " + snap.child("TRAIN NAME").getValue().toString() + " is " + snap.child("TRAIN NO").getValue().toString());
+                            mArrayList.add(map);
+                            adapter.notifyDataSetChanged();
+                            break;
+                        }
+                    }
+                    if(flag == 0){
+                        textToSpeech.speak("Sorry, incorrect train name", TextToSpeech.QUEUE_ADD, null, "hello");
+                        map = new HashMap();
+                        map.put("POSITION", "LEFT");
+                        map.put("TEXT", "Sorry, incorrect train name");
+                        mArrayList.add(map);
+                        adapter.notifyDataSetChanged();
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        }
+
+        else if(answer.contains("what is") && answer.contains("train name") && answer.contains("of")){
+            handler.removeCallbacks(runnable);
+            mRef.child("TRAIN TABLE").child("TRAINS").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    int flag = 0;
+                    for(DataSnapshot snap: snapshot.getChildren()){
+                        if(answer.replaceAll("\\s", "").contains(Objects.requireNonNull(snap.child("TRAIN NO").getValue()).toString().toLowerCase())){
+                            flag++;
+                            textToSpeech.speak("The train name of " + snap.child("TRAIN NO").getValue().toString() + " is " + snap.child("TRAIN NAME").getValue().toString(), TextToSpeech.QUEUE_ADD, null, "hello");
+                            map = new HashMap();
+                            map.put("POSITION", "LEFT");
+                            map.put("TEXT", "The train name of " + snap.child("TRAIN NO").getValue().toString() + " is " + snap.child("TRAIN NAME").getValue().toString());
+                            mArrayList.add(map);
+                            adapter.notifyDataSetChanged();
+                            break;
+                        }
+                    }
+                    if(flag == 0){
+                        textToSpeech.speak("Sorry, incorrect train number", TextToSpeech.QUEUE_ADD, null, "hello");
+                        map = new HashMap();
+                        map.put("POSITION", "LEFT");
+                        map.put("TEXT", "Sorry, incorrect train number");
+                        mArrayList.add(map);
+                        adapter.notifyDataSetChanged();
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        }
+
+
+        else if(answer.contains("which train") && answer.contains("platform")){
+            handler.removeCallbacks(runnable);
+            final String[] trainName = {""};
+            final String[] trainNo = {""};
+            final String[] platformNo = {""};
+            final String finalAnswer = answer;
+            mRef.child("TRAIN TABLE").child("PLATFORM").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    int flag = 0;
+                    for(DataSnapshot snap : snapshot.getChildren()){
+                        if(finalAnswer.contains(snap.child("PLATFORM NO").getValue().toString())){
+                            flag++;
+                            platformNo[0] = snap.child("PLATFORM NO").getValue().toString();
+                            trainNo[0] = snap.child("TRAIN NO").getValue().toString();
+                            mRef.child("TRAIN TABLE").child("TRAINS").addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    int flag = 0;
+                                    for(DataSnapshot snap : snapshot.getChildren()){
+                                        if(snap.child("TRAIN NO").getValue().toString().contains(trainNo[0])){
+                                            flag++;
+                                            trainName[0] = snap.child("TRAIN NAME").getValue().toString();
+                                        }
+                                    }
+                                    if(flag != 0){
+                                        textToSpeech.speak("Train " + trainName[0] + " will arrive at platform " + platformNo[0], TextToSpeech.QUEUE_ADD, null, "hello");
+                                        map = new HashMap();
+                                        map.put("POSITION", "LEFT");
+                                        map.put("TEXT", "Train " + trainName[0] + " will arrive at platform " + platformNo[0]);
+                                        mArrayList.add(map);
+                                        adapter.notifyDataSetChanged();
+                                    }
+                                    else{
+                                        textToSpeech.speak("No data was found, sorry", TextToSpeech.QUEUE_ADD, null, "hello");
+                                        map = new HashMap();
+                                        map.put("POSITION", "LEFT");
+                                        map.put("TEXT", "No data was found, sorry");
+                                        mArrayList.add(map);
+                                        adapter.notifyDataSetChanged();
+                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+
+                                }
+                            });
+                        }
+                    }
+                    if(flag == 0){
+                        //invalid
+                        textToSpeech.speak("Sorry, invalid platform number", TextToSpeech.QUEUE_ADD, null, "hello");
+                        map = new HashMap();
+                        map.put("POSITION", "LEFT");
+                        map.put("TEXT", "Sorry, invalid platform number");
+                        mArrayList.add(map);
+                        adapter.notifyDataSetChanged();
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        }
+
+        else if(answer.contains("which platform") && answer.contains("arrive")){
+            handler.removeCallbacks(runnable);
+            final String[] trainName = new String[1];
+            final String[] trainNo = new String[1];
+            final String[] platformNo = {""};
+
+            mRef.child("TRAIN TABLE").child("TRAINS").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    int flag = 0;
+                   for(DataSnapshot snap : snapshot.getChildren()){
+                       if(answer.contains(snap.child("TRAIN NAME").getValue().toString().toLowerCase())){
+                           flag++;
+                           trainName[0] = snap.child("TRAIN NAME").getValue().toString();
+                           trainNo[0] = snap.child("TRAIN NO").getValue().toString();
+
+                           mRef.child("TRAIN TABLE").child("PLATFORM").addListenerForSingleValueEvent(new ValueEventListener() {
+                               @Override
+                               public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                   int flag = 0;
+                                   for(DataSnapshot snap : snapshot.getChildren()){
+                                       Log.e(TAG, "onDataChange: Platform " + snap );
+                                       Log.e(TAG, "onDataChange: " + snap.child("TRAIN NO").getValue().toString() + " " + trainNo[0] );
+                                       if(snap.child("TRAIN NO").getValue().toString().contains(trainNo[0])){
+                                           flag++;
+                                           platformNo[0] = snap.child("PLATFORM NO").getValue().toString();
+                                           break;
+                                       }
+                                   }
+                                   if(flag != 0){
+                                       textToSpeech.speak("Train " + trainName[0] + " will arrive at platform " + platformNo[0], TextToSpeech.QUEUE_ADD, null, "hello");
+                                       map = new HashMap();
+                                       map.put("POSITION", "LEFT");
+                                       map.put("TEXT", "Train " + trainName[0] + " will arrive at platform " + platformNo[0]);
+                                       mArrayList.add(map);
+                                       adapter.notifyDataSetChanged();
+                                   }
+                                   else{
+                                       textToSpeech.speak("No data was found, sorry", TextToSpeech.QUEUE_ADD, null, "hello");
+                                       map = new HashMap();
+                                       map.put("POSITION", "LEFT");
+                                       map.put("TEXT", "No data was found, sorry");
+                                       mArrayList.add(map);
+                                       adapter.notifyDataSetChanged();
+                                   }
+                               }
+
+                               @Override
+                               public void onCancelled(@NonNull DatabaseError error) {
+
+                               }
+                           });
+
+                           break;
+                       }
+                   }
+                   if(flag == 0){
+                       textToSpeech.speak("Sorry, that was an invalid train name", TextToSpeech.QUEUE_ADD, null, "hello");
+                       map = new HashMap();
+                       map.put("POSITION", "LEFT");
+                       map.put("TEXT", "Sorry, that was an invalid train name");
+                       mArrayList.add(map);
+                       adapter.notifyDataSetChanged();
+                   }
                 }
 
                 @Override
@@ -703,7 +1163,7 @@ public class MainActivity extends AppCompatActivity {
                                 for (DataSnapshot snap : snapshot.getChildren()) {
                                     for (int i = 0; i < cityCode.size(); i++) {
                                         Log.e(TAG, "onDataChange: CODE" + snap.child("STATION CODE").getValue().toString() + " 0 " + cityCode.get(i));
-                                        if (snap.child("STATION CODE").getValue().toString().toLowerCase().contains(cityCode.get(i))) {
+                                        if (snap.child("TYPE").getValue().toString().contains("TO") && snap.child("STATION CODE").getValue().toString().toLowerCase().contains(cityCode.get(i))) {
                                             Log.e(TAG, "onDataChange: CODE" + snap.child("STATION CODE").getValue().toString() + " 0 " + cityCode.get(i));
                                             flag++;
                                             speech = speech + cityCode.get(i) + " ";
@@ -759,54 +1219,102 @@ public class MainActivity extends AppCompatActivity {
             });
 
         }
-
+/**
+ * When will train ** reach **
+ */
         else if(answer.contains("when will train") && answer.contains("arrive at")){
-            Log.e(TAG, "onResults: train arrive" );
-
-            final String[] key = new String[1], key1 = new String[1];
-
             handler.removeCallbacks(runnable);
-            final String finalAnswer = answer;
-
-            mRef.child("TRAIN TABLE").child("ARRIVAL").addListenerForSingleValueEvent(new ValueEventListener() {
+            final String[] stationName = new String[1];
+            final String[] trainNumber = new String[1];
+            final String[] trainName = new String[1];
+            final String[] stationCode = new String[1];
+            final String[] timingsFound = {""};
+            mRef.child("TRAIN TABLE").child("TRAINS").addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     int flag = 0;
-                    if(snapshot.exists()) {
-                        Log.e(TAG, "onDataChange: Snap shot exists" );
-                        for (DataSnapshot snap : snapshot.getChildren()){
-                            key[0] = snap.child("TRAIN NO").getValue().toString().toLowerCase();
-                            key1[0] = snap.child("STATION CODE").getValue().toString().toLowerCase();
+                    for(final DataSnapshot snap : snapshot.getChildren()){
+                        if(answer.contains(snap.child("TRAIN NAME").getValue().toString().toLowerCase())){
+                            flag ++;
+                            trainName[0] = snap.child("TRAIN NAME").getValue().toString();
+                            trainNumber[0] = snap.child("TRAIN NO").getValue().toString();
 
-                            Log.e(TAG, "onDataChange: Key" + key[0] + " Code " + key1[0]);
-                            if (finalAnswer.contains(key[0]) && finalAnswer.contains(key1[0])) {
+                            mRef.child("TRAIN TABLE").child("STATIONS").addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    int flag = 0;
+                                    for(DataSnapshot snap : snapshot.getChildren()){
+                                        if(answer.contains(snap.child("STATION NAME").getValue().toString().toLowerCase())){
+                                            flag++;
+                                            stationName[0] = snap.child("STATION NAME").getValue().toString();
+                                            stationCode[0] = snap.child("STATION CODE").getValue().toString();
 
-                                textToSpeech.speak("Train " + key[0] + " will arrive on " + snap.child("ARRIVAL").getValue().toString() + " at " + key1[0], TextToSpeech.QUEUE_ADD, null, "hello");
+                                            mRef.child("TRAIN TABLE").child("ARRIVAL").addListenerForSingleValueEvent(new ValueEventListener() {
+                                                @Override
+                                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                                    int flag = 0;
+                                                    for(DataSnapshot snap : snapshot.getChildren()){
+                                                        if(snap.child("TRAIN NO").getValue().toString().contains(trainNumber[0])
+                                                            && snap.child("STATION CODE").getValue().toString().contains(stationCode[0])
+                                                            && snap.child("TYPE").getValue().toString().contains("TO")){
+                                                            flag++;
+                                                            timingsFound[0] += snap.child("ARRIVAL").getValue().toString() + "\n";
+                                                        }
+                                                    }
+                                                    if(flag == 0){
+                                                        //timing not found
+                                                        textToSpeech.speak("Sorry, no timings were found", TextToSpeech.QUEUE_ADD, null, "hello");
+                                                        map = new HashMap();
+                                                        map.put("POSITION", "LEFT");
+                                                        map.put("TEXT", "Sorry, no timings were found");
+                                                        mArrayList.add(map);
+                                                        adapter.notifyDataSetChanged();
 
-                                flag ++;
+                                                    }
+                                                    else{
+                                                        textToSpeech.speak("Timings were found for " + trainName[0] + " for station " + stationName[0], TextToSpeech.QUEUE_ADD, null, "hello");
+                                                        map = new HashMap();
+                                                        map.put("POSITION", "LEFT");
+                                                        map.put("TEXT", "Timings were found for " + trainName[0] + " for station " + stationName[0] + ":\n"
+                                                        + timingsFound[0]);
+                                                        mArrayList.add(map);
+                                                        adapter.notifyDataSetChanged();
+                                                    }
+                                                }
 
-                                map = new HashMap();
-                                map.put("POSITION", "LEFT");
-                                map.put("TEXT", "Train " + key[0] + " will arrive on " + snap.child("ARRIVAL").getValue().toString() + " at " + key1[0]);
-                                mArrayList.add(map);
-                                adapter.notifyDataSetChanged();
-                            }
-                        }
+                                                @Override
+                                                public void onCancelled(@NonNull DatabaseError error) {
 
-                        if(flag == 0){
-                            textToSpeech.speak("Sorry, no trains of that number was found", TextToSpeech.QUEUE_ADD, null, "hello");
-                            map = new HashMap();
-                            map.put("POSITION", "LEFT");
-                            map.put("TEXT", "Sorry, no trains of that number was found");
-                            mArrayList.add(map);
-                            adapter.notifyDataSetChanged();
+                                                }
+                                            });
+                                            break;
+                                        }
+                                    }
+                                    if(flag == 0){
+                                        //station invalid
+                                        textToSpeech.speak("Sorry, invalid station name", TextToSpeech.QUEUE_ADD, null, "hello");
+                                        map = new HashMap();
+                                        map.put("POSITION", "LEFT");
+                                        map.put("TEXT", "Sorry, invalid station name");
+                                        mArrayList.add(map);
+                                        adapter.notifyDataSetChanged();
+                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+
+                                }
+                            });
+                            break;
                         }
                     }
-                    else{
-                        textToSpeech.speak("Sorry, no data was found", TextToSpeech.QUEUE_ADD, null, "hello");
+                    if(flag == 0){
+                        //Train invalid
+                        textToSpeech.speak("Sorry, invalid train name", TextToSpeech.QUEUE_ADD, null, "hello");
                         map = new HashMap();
-                        map.put("POSITION", "RIGHT");
-                        map.put("TEXT", "Sorry, no data was found");
+                        map.put("POSITION", "LEFT");
+                        map.put("TEXT", "Sorry, invalid train name");
                         mArrayList.add(map);
                         adapter.notifyDataSetChanged();
                     }
@@ -817,10 +1325,113 @@ public class MainActivity extends AppCompatActivity {
 
                 }
             });
-
         }
 
-        else if(answer.contains("hello") || answer.contains("hay") || answer.contains("sup") || answer.contains("hi") || answer.contains("hey")){
+        else if(answer.contains("when will train") && (answer.contains("leave") || answer.contains("start from"))){
+            handler.removeCallbacks(runnable);
+            final String[] stationName = new String[1];
+            final String[] trainNumber = new String[1];
+            final String[] trainName = new String[1];
+            final String[] stationCode = new String[1];
+            final String[] timingsFound = {""};
+            mRef.child("TRAIN TABLE").child("TRAINS").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    int flag = 0;
+                    for(final DataSnapshot snap : snapshot.getChildren()){
+                        if(answer.contains(snap.child("TRAIN NAME").getValue().toString().toLowerCase())){
+                            flag ++;
+                            trainName[0] = snap.child("TRAIN NAME").getValue().toString();
+                            trainNumber[0] = snap.child("TRAIN NO").getValue().toString();
+
+                            mRef.child("TRAIN TABLE").child("STATIONS").addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    int flag = 0;
+                                    for(DataSnapshot snap : snapshot.getChildren()){
+                                        if(answer.contains(snap.child("STATION NAME").getValue().toString().toLowerCase())){
+                                            flag++;
+                                            stationName[0] = snap.child("STATION NAME").getValue().toString();
+                                            stationCode[0] = snap.child("STATION CODE").getValue().toString();
+                                            mRef.child("TRAIN TABLE").child("ARRIVAL").addListenerForSingleValueEvent(new ValueEventListener() {
+                                                @Override
+                                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                                    int flag = 0;
+                                                    for(DataSnapshot snap : snapshot.getChildren()){
+                                                        if(snap.child("TRAIN NO").getValue().toString().contains(trainNumber[0])
+                                                                && snap.child("STATION CODE").getValue().toString().contains(stationCode[0])){
+                                                            flag++;
+                                                            timingsFound[0] += snap.child("DEPARTURE").getValue().toString() + "\n";
+                                                        }
+                                                    }
+                                                    if(flag == 0){
+                                                        //timing not found
+                                                        textToSpeech.speak("Sorry, no timings were found", TextToSpeech.QUEUE_ADD, null, "hello");
+                                                        map = new HashMap();
+                                                        map.put("POSITION", "LEFT");
+                                                        map.put("TEXT", "Sorry, no timings were found");
+                                                        mArrayList.add(map);
+                                                        adapter.notifyDataSetChanged();
+
+                                                    }
+                                                    else{
+                                                        textToSpeech.speak("Train " + trainName[0] + "will leave at the following times", TextToSpeech.QUEUE_ADD, null, "hello");
+                                                        map = new HashMap();
+                                                        map.put("POSITION", "LEFT");
+                                                        map.put("TEXT", "Train " + trainName[0] + " will leave at the following times \n " + stationName[0] + ":\n"
+                                                                + timingsFound[0]);
+                                                        mArrayList.add(map);
+                                                        adapter.notifyDataSetChanged();
+                                                    }
+                                                }
+
+                                                @Override
+                                                public void onCancelled(@NonNull DatabaseError error) {
+
+                                                }
+                                            });
+                                            break;
+                                        }
+                                    }
+                                    if(flag == 0){
+                                        //station invalid
+                                        textToSpeech.speak("Sorry, invalid station name", TextToSpeech.QUEUE_ADD, null, "hello");
+                                        map = new HashMap();
+                                        map.put("POSITION", "LEFT");
+                                        map.put("TEXT", "Sorry, invalid station name");
+                                        mArrayList.add(map);
+                                        adapter.notifyDataSetChanged();
+                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+
+                                }
+                            });
+                            break;
+                        }
+                    }
+                    if(flag == 0){
+                        //Train invalid
+                        textToSpeech.speak("Sorry, invalid train name", TextToSpeech.QUEUE_ADD, null, "hello");
+                        map = new HashMap();
+                        map.put("POSITION", "LEFT");
+                        map.put("TEXT", "Sorry, invalid train name");
+                        mArrayList.add(map);
+                        adapter.notifyDataSetChanged();
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        }
+
+
+        else if(answer.equals("hello") || answer.equals("hay") || answer.equals("sup") || answer.equals("hi") || answer.equals("hey")){
 
             handler.removeCallbacks(runnable);
             textToSpeech.speak("Hey, how can I help you?", TextToSpeech.QUEUE_ADD, null, "hello");
@@ -1238,7 +1849,41 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         Log.e(TAG, "onResume: Resume" );
+    }
 
+    private int compareToSystemTime(String timeString){
+        @SuppressLint("SimpleDateFormat") SimpleDateFormat format = new SimpleDateFormat("HH:mm");
+        String systemTime = format.format(new Date());
 
+        Log.e(TAG, "compareTimeString: Time is being compared" + timeString + " " + systemTime);
+
+        String[] inputTimeString = timeString.split(":");
+        String[] systemTimeString = systemTime.split(":");
+        int inputHour = Integer.parseInt(inputTimeString[0]);
+        int inputMinute = Integer.parseInt(inputTimeString[1]);
+
+        int systemHour = Integer.parseInt(systemTimeString[0]);
+        int systemMinute = Integer.parseInt(systemTimeString[1]);
+
+        if((systemHour - inputHour) < 0){
+            return TIME_GREATER;
+        }
+        else if((systemHour - inputHour) > 0){
+            return TIME_LESSER;
+        }
+
+        else{
+            if((systemMinute - inputMinute) < 0){
+                return TIME_GREATER;
+            }
+
+            else if((systemMinute - inputMinute) > 0){
+                return TIME_LESSER;
+            }
+
+            else{
+                return TIME_EQUAL;
+            }
+        }
     }
 }
