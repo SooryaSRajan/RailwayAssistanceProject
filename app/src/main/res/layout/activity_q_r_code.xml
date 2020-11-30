@@ -38,7 +38,7 @@
 
 
     <ImageView
-        android:src="@drawable/qr_trial"
+        android:src="@drawable/web_qr"
         android:id="@+id/qr_image"
         android:layout_marginTop="40dp"
         android:layout_below="@+id/qr_hint_text"

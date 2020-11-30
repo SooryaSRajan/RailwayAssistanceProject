@@ -2,8 +2,11 @@ package com.ssr_projects.railasistant.Registration;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -78,7 +81,7 @@ public class QRCodeActivity extends AppCompatActivity {
         speechRecognizer.setRecognitionListener(new RecognitionListener() {
             @Override
             public void onReadyForSpeech(Bundle bundle) {
-
+                adjustAudio(true);
             }
 
             @Override
@@ -108,6 +111,7 @@ public class QRCodeActivity extends AppCompatActivity {
 
             @Override
             public void onResults(Bundle bundle) {
+                adjustAudio(false);
                 speechRecognizer.stopListening();
                 ArrayList<String> data = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                 String command = data.get(0);
@@ -149,5 +153,24 @@ public class QRCodeActivity extends AppCompatActivity {
         speechRecognizer.cancel();
         speechRecognizer.destroy();
 
+    }
+
+    public void adjustAudio(boolean setMute) {
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            int adJustMute;
+            if (setMute) {
+                adJustMute = AudioManager.ADJUST_MUTE;
+            } else {
+                adJustMute = AudioManager.ADJUST_UNMUTE;
+            }
+            audioManager.adjustStreamVolume(AudioManager.STREAM_NOTIFICATION, adJustMute, 0);
+            audioManager.adjustStreamVolume(AudioManager.STREAM_ALARM, adJustMute, 0);
+            audioManager.adjustStreamVolume(AudioManager.STREAM_RING, adJustMute, 0);
+        } else {
+            audioManager.setStreamMute(AudioManager.STREAM_NOTIFICATION, setMute);
+            audioManager.setStreamMute(AudioManager.STREAM_ALARM, setMute);
+            audioManager.setStreamMute(AudioManager.STREAM_RING, setMute);
+        }
     }
 }

@@ -3,12 +3,14 @@ package com.ssr_projects.railasistant.Registration;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.PersistableBundle;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -228,7 +230,7 @@ public class ReservationActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             if(trainType.contains(TYPE_EXPRESS)){
-                                textToSpeech.speak("This is an express train, what category do you want?", TextToSpeech.QUEUE_ADD, null, "state_1");
+                                textToSpeech.speak("This is an express train, what category do you want?", TextToSpeech.QUEUE_FLUSH, null, "state_1");
                                 map = new HashMap();
                                 map.put("POSITION", "LEFT");
                                 map.put("TEXT", "This is an express train, what category do you want? 3AC, 2AC, 1AC, CC, FC, SC, ST");
@@ -237,7 +239,7 @@ public class ReservationActivity extends AppCompatActivity {
                                 state = EXPRESS_STATE;
                             }
                             else if(trainType.contains(TYPE_ORDINARY)){
-                                textToSpeech.speak("This is an ordinary train, how many seats do you want?", TextToSpeech.QUEUE_ADD, null, "state_1");
+                                textToSpeech.speak("This is an ordinary train, how many seats do you want?", TextToSpeech.QUEUE_FLUSH, null, "state_1");
                                 map = new HashMap();
                                 map.put("POSITION", "LEFT");
                                 map.put("TEXT", "This is an ordinary train, how many seats do you want?");
@@ -260,7 +262,7 @@ public class ReservationActivity extends AppCompatActivity {
         speechRecognizer.setRecognitionListener(new RecognitionListener() {
             @Override
             public void onReadyForSpeech(Bundle bundle) {
-
+                adjustAudio(true);
             }
 
             @Override
@@ -295,6 +297,7 @@ public class ReservationActivity extends AppCompatActivity {
 
             @Override
             public void onResults(Bundle bundle) {
+                adjustAudio(false);
                 gifImageView.setVisibility(View.GONE);
                 ArrayList<String> data = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                 String answer = data.get(0);
@@ -309,7 +312,7 @@ public class ReservationActivity extends AppCompatActivity {
                 adapter.notifyDataSetChanged();
 
                 if(answer.contains("cancel")){
-                    textToSpeech.speak("Cancelling Process", TextToSpeech.QUEUE_ADD, null, "hello");
+                    textToSpeech.speak("Cancelling Process", TextToSpeech.QUEUE_FLUSH, null, "hello");
                     map = new HashMap();
                     map.put("POSITION", "LEFT");
                     map.put("TEXT", "Cancelling Process");
@@ -605,7 +608,9 @@ public class ReservationActivity extends AppCompatActivity {
                                         trainInformation.get(optionPosition).get("TRAIN").child("TRAIN NAME").getValue().toString(),
                                         trainType, expressCategoryForFair, noOfSeats, totalFare, travelDistance,
                                         trainInformation.get(optionPosition).get("ARRIVAL").child("ARRIVAL").getValue().toString(),
-                                        trainInformation.get(optionPosition).get("TRAIN").getKey());
+                                        trainInformation.get(optionPosition).get("TRAIN").getKey(),
+                                        trainInformation.get(optionPosition).get("ARRIVAL").child("DEPARTURE").getValue().toString()
+                                        );
 
                                 Log.e(TAG, "onResults: " + reservationData);
                                 Intent intent = new Intent(ReservationActivity.this, ReservationTicketActivity.class);
@@ -711,4 +716,22 @@ public class ReservationActivity extends AppCompatActivity {
 
     }
 
+    public void adjustAudio(boolean setMute) {
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            int adJustMute;
+            if (setMute) {
+                adJustMute = AudioManager.ADJUST_MUTE;
+            } else {
+                adJustMute = AudioManager.ADJUST_UNMUTE;
+            }
+            audioManager.adjustStreamVolume(AudioManager.STREAM_NOTIFICATION, adJustMute, 0);
+            audioManager.adjustStreamVolume(AudioManager.STREAM_ALARM, adJustMute, 0);
+            audioManager.adjustStreamVolume(AudioManager.STREAM_RING, adJustMute, 0);
+        } else {
+            audioManager.setStreamMute(AudioManager.STREAM_NOTIFICATION, setMute);
+            audioManager.setStreamMute(AudioManager.STREAM_ALARM, setMute);
+            audioManager.setStreamMute(AudioManager.STREAM_RING, setMute);
+        }
+    }
 }
