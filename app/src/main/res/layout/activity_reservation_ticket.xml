@@ -122,6 +122,7 @@
                 tools:ignore="HardcodedText" />
 
             <TextView
+                android:visibility="gone"
                 android:textSize="20sp"
                 android:fontFamily="sans-serif-condensed-medium"
                 android:textColor="#9E9E9E"
@@ -274,6 +275,7 @@
                 tools:ignore="HardcodedText" />
 
             <TextView
+                android:visibility="gone"
                 android:maxLines="1"
                 android:textSize="20sp"
                 android:fontFamily="sans-serif-condensed-medium"

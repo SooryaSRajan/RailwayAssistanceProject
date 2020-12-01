@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
             "\n->Show run schedule" +
             "\n->Which is the train number of *train name*" +
             "\n->When will trains going to *station name* reach here" +
-            "\n->Which is the train name of *train number*" +
+            "\n->What is the train name of *train number*" +
             "\n->I want to reserve a ticket" +
             "\n->Show station details of *station name*" +
             "\n->What are the connected stations*" +
@@ -812,7 +812,7 @@ public class MainActivity extends AppCompatActivity {
          * Doesnt depend on system time
          */
 
-        else if(answer.contains("when will") && answer.contains("reach")){
+        else if(answer.contains("when will") && answer.contains("reach here")){
             handler.removeCallbacks(runnable);
             mRef.child("TRAIN TABLE").child("TRAINS").addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
@@ -1552,7 +1552,12 @@ public class MainActivity extends AppCompatActivity {
                                                         if(snap.child("TRAIN NO").getValue().toString().contains(trainNumber[0])
                                                                 && snap.child("STATION CODE").getValue().toString().contains(stationCode[0])){
                                                             flag++;
-                                                            timingsFound[0] += snap.child("DEPARTURE").getValue().toString() + "\n";
+                                                            if(snap.child("DEPARTURE").getValue().toString().contains("NULL")){
+                                                                timingsFound[0] += "12:47" + "\n";
+                                                            }
+                                                            else{
+                                                                timingsFound[0] += snap.child("DEPARTURE").getValue().toString() + "\n";
+                                                            }
                                                         }
                                                     }
                                                     if(flag == 0){
